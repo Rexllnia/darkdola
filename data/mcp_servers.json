@@ -1,0 +1,21 @@
+{
+  "servers": {
+    "chrome": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+    },    
+    "mcp-python-interpreter": {
+        "command": "uvx",
+        "args": [
+            "mcp-python-interpreter",
+            "--dir",
+            "/home/walnut/darkdola-v2/python_auto_gen",
+            "--python-path",
+            "/home/walnut/miniconda3/bin/python"
+        ],
+        "env": {
+            "MCP_ALLOW_SYSTEM_ACCESS": "0"
+        }
+    }
+  }
+}
