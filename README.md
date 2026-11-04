@@ -63,7 +63,7 @@ source .venv/bin/activate
 ## 第 2 步：首次登录豆包
 
 ```bash
-python main.py
+python darkdola.py 1
 ```
 
 会发生三件事：
@@ -112,10 +112,10 @@ python main.py
 ## 第 4 步：启动
 
 ```bash
-python darkdola.py 1
+python darkdola.py 4
 ```
 
-`1` 是 worker 实例数。想并发跑多路任务就写 `python darkdola.py 2`、`python darkdola.py 4`，每个 worker 独占一个浏览器上下文。
+`4` 是 worker 实例数。想并发跑多路任务就写 `python darkdola.py 2`、`python darkdola.py 4`，每个 worker 独占一个浏览器上下文。
 
 启动过程会依次打印：
 
