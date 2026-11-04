@@ -7,3 +7,4 @@ mcp>=1.0,<2.0
 identity-agnostic-worker>=0.1.2,<0.2.0
 brewer-nash-dispatcher>=0.0.0
 playwright>=1.48,<1.50
+agent-tool-parser @ git+https://github.com/Rexllnia/agent-tool-parser.git@fix/utf8-char-boundary
