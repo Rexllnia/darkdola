@@ -41,10 +41,12 @@ darkdola 是一个基于 **Model Context Protocol (MCP)** 的轻量级 AI Agent 
 git clone https://github.com/Rexllnia/darkdola.git
 cd darkdola
 
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+uv venv --python 3.13
 
-pip install -r requirements.txt
+# 激活并重新安装依赖
+source .venv/bin/activate
+uv pip install -r requirements.txt
+
 python -m playwright install chromium
 ```
 
