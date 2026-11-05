@@ -7,7 +7,58 @@ from tool_contract import ToolCallStatus
 
 # ReAct 循环的最大工具调用轮数
 MAX_ITERATIONS = 20
+# ---------------------------------------------------------------------------
+# ReAct prompt 分块常量（system 部分）
+# ---------------------------------------------------------------------------
 
+_REACT_ROLE = """# 角色
+你是一个通过「思考 → 行动 → 观察」循环来可靠完成任务的智能体。
+"""
+
+_REACT_PROTOCOL = """# 输出协议
+每一轮只选择以下两种形式之一。
+
+## 形式 A：需要调用工具
+Thought: <用自然语言分析当前已知信息，说明下一步做什么、为什么>
+<tool_call>
+{"name": "<工具名>", "arguments": {<符合该工具 input_schema 的 JSON 对象>}}
+</tool_call>
+
+系统执行工具后，会以 Observation 的形式返回结果。收到 Observation 后，必须回到 Thought 重新分析，再决定下一次 Action 或给出 Final Answer。
+
+## 形式 B：信息已足够，给出最终答案
+Thought: <简要说明为什么现在可以回答>
+Final Answer: <完整、准确的最终答案>
+"""
+
+_REACT_CONSTRAINTS = """# 约束
+2. 调用工具前必须先输出 Thought，禁止无思考直接调用。
+3. <tool_call> 内必须是合法 JSON：双引号、无注释、无尾逗号。
+4. name 必须精确等于上方工具列表中的名字。
+5. arguments 必须是 JSON 对象，并符合该工具的 input_schema。
+6. 工具返回错误或空结果时，在下一个 Thought 中分析原因，可调整参数重试或换工具，不要直接放弃。
+7. 仅凭已有信息就能可靠回答时，直接输出 Final Answer，无需调用工具。
+8. 最多进行 {MAX_ITERATIONS} 轮工具调用；达到上限仍未完成时，输出 Final Answer 并如实说明未解决的部分。
+9. 如果需要用户确认、补充信息，或对任务目标存在犹豫，直接用自然语言向用户提问，禁止输出 <tool_call>，禁止输出 JSON。
+10. 禁止输出任何表情包，整个对话中不要使用表情。
+"""
+
+_REACT_STOP = """# 停止条件
+输出 Final Answer 时循环结束。不要在 <tool_call> 之后追加确认性问题或额外说明。
+"""
+
+_REACT_EXAMPLE = """# 示例
+User: 请计算 2 的 10 次方。
+Thought: 这是纯计算任务，应调用 Python 解释器工具。
+<tool_call>
+{"name": "python_execute", "arguments": {"code": "print(2 ** 10)"}}
+</tool_call>
+Observation: 1024
+Thought: 工具返回 1024，已经得到答案。
+Final Answer: 2 的 10 次方等于 1024。
+
+（示例中的工具名与参数仅用于展示格式，实际以工具列表与 input_schema 为准。）
+"""
 
 # ---------------------------------------------------------------------------
 # 工具清单格式化
@@ -47,57 +98,46 @@ def _build_tools_block(tools: list[dict]) -> str:
 def build_react_bootstrap_prompt(tools: list[dict]) -> str:
     """构建 ReAct 初始化系统提示词。只在工具就绪后调用一次。"""
     tools_block = _build_tools_block(tools)
-    return f"""# 角色
-你是一个通过「思考 → 行动 → 观察」循环来可靠完成任务的智能体。
 
-# 可用工具
+    tools_section = f"""# 可用工具
 以下工具已连接到运行环境。工具名必须精确匹配，禁止编造不存在的工具。
 {tools_block}
 
 每个工具的 input_schema 是 JSON Schema，调用时 arguments 必须符合对应 schema。
-
-# 输出协议
-每一轮只选择以下两种形式之一。
-
-## 形式 A：需要调用工具
-Thought: <用自然语言分析当前已知信息，说明下一步做什么、为什么>
-<tool_call>
-{{"name": "<工具名>", "arguments": {{<符合该工具 input_schema 的 JSON 对象>}}}}
-</tool_call>
-
-系统执行工具后，会以 Observation 的形式返回结果。收到 Observation 后，必须回到 Thought 重新分析，再决定下一次 Action 或给出 Final Answer。
-
-## 形式 B：信息已足够，给出最终答案
-Thought: <简要说明为什么现在可以回答>
-Final Answer: <完整、准确的最终答案>
-
-# 约束
-2. 调用工具前必须先输出 Thought，禁止无思考直接调用。
-3. <tool_call> 内必须是合法 JSON：双引号、无注释、无尾逗号。
-4. name 必须精确等于上方工具列表中的名字。
-5. arguments 必须是 JSON 对象，并符合该工具的 input_schema。
-6. 工具返回错误或空结果时，在下一个 Thought 中分析原因，可调整参数重试或换工具，不要直接放弃。
-7. 仅凭已有信息就能可靠回答时，直接输出 Final Answer，无需调用工具。
-8. 最多进行 {MAX_ITERATIONS} 轮工具调用；达到上限仍未完成时，输出 Final Answer 并如实说明未解决的部分。
-9. 如果需要用户确认、补充信息，或对任务目标存在犹豫，直接用自然语言向用户提问，禁止输出 <tool_call>，禁止输出 JSON。
-10. 禁止输出任何表情包，整个对话中不要使用表情。
-
-# 停止条件
-输出 Final Answer 时循环结束。不要在 <tool_call> 之后追加确认性问题或额外说明。
-
-# 示例
-User: 请计算 2 的 10 次方。
-Thought: 这是纯计算任务，应调用 Python 解释器工具。
-<tool_call>
-{{"name": "python_execute", "arguments": {{"code": "print(2 ** 10)"}}}}
-</tool_call>
-Observation: 1024
-Thought: 工具返回 1024，已经得到答案。
-Final Answer: 2 的 10 次方等于 1024。
-
-（示例中的工具名与参数仅用于展示格式，实际以工具列表与 input_schema 为准。）
 """
 
+    constraints = _REACT_CONSTRAINTS.replace("{MAX_ITERATIONS}", str(MAX_ITERATIONS))
+
+    return "\n".join([
+        _REACT_ROLE,
+        tools_section,
+        _REACT_PROTOCOL,
+        constraints,
+        _REACT_STOP,
+        _REACT_EXAMPLE,
+    ])
+# 每多少轮在用户消息尾部追加一次提醒
+PERIODIC_REMIND_EVERY = 5
+
+_PERIODIC_REMINDER_TEXT = (
+    "【提醒】回到协议：每一轮先 Thought，再 <tool_call> 或 Final Answer。"
+    "工具名必须精确匹配，arguments 必须是合法 JSON。"
+    "需要用户确认时直接提问，不要输出 tool_call。"
+)
+
+
+def maybe_add_periodic_reminder(user_message: str, round_index: int) -> str:
+    """偶提醒：每满 5 轮，在用户消息后面追加一次协议提醒。
+
+    输入：
+      - user_message: 原用户消息（build_react_user_prompt 的输出）
+      - round_index: 当前第几轮（1 起步；0 或负数视为刚开始，不提醒）
+    输出：
+      - 原消息（不满足条件），或 原消息 + "\\n\\n" + 提醒（第 5/10/15… 轮）
+    """
+    if round_index > 0 and round_index % PERIODIC_REMIND_EVERY == 0:
+        return f"{user_message}\n\n{_PERIODIC_REMINDER_TEXT}"
+    return user_message
 
 async def init_react_agent(tools: list[dict], send_fn) -> None:
     """工具就绪后由编排层调用：构建初始化提示词并发送。

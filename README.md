@@ -72,7 +72,7 @@ playwright codegen https://www.doubao.com/ --save-storage="save.json"
 
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "filesystem": {
       "command": "npx",
       "args": [
