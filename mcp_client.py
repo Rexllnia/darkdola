@@ -84,7 +84,7 @@ def get_tools_snapshot() -> list[dict]:
 def _load_servers() -> dict[str, StdioServerParameters]:
     cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     params: dict[str, StdioServerParameters] = {}
-    for name, s in cfg["servers"].items():
+    for name, s in cfg["mcpServers"].items():
         params[name] = StdioServerParameters(
             command=s["command"],
             args=s.get("args", []),
