@@ -13,7 +13,7 @@ from worker import worker_init,worker_recv
 
 SAVE_FILE = Path("save.json")
 RAW_LOG = "raw_log.json"
-
+TARGET_URL = "https://www.doubao.com/"
 raw_file = open(
     RAW_LOG,
     "a",
@@ -57,14 +57,14 @@ async def page_init(playwright: Playwright):
 
     await context.expose_function("__doubao_sse_push", on_sse_push)
 
-    await page.goto("https://www.doubao.com/")
-    
+    await page.goto(TARGET_URL)
 
     
     if not SAVE_FILE.exists():
-        input("请在浏览器里完成登录，完成后按回车保存状态...")
-        await context.storage_state(path=str(SAVE_FILE))
-        print(f"状态已保存到 {SAVE_FILE}")
+        print(f"未找到 {SAVE_FILE}，第一次启动请先手动登录并保存状态：")
+        print(f"    playwright codegen {TARGET_URL} --save-storage={SAVE_FILE}")
+        print("登录完成后关闭浏览器窗口，状态会自动保存。")
+        raise SystemExit(1)  # 或者 return 让上层处理
     return page , browser , context
 
 
