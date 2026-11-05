@@ -61,25 +61,7 @@ source .venv/bin/activate
 ---
 
 ## 第 2 步：首次登录豆包
-
-```bash
-python darkdola.py 1
-```
-
-会发生三件事：
-
-1. 弹出一个 Chrome 窗口，打开 `https://www.doubao.com/`。
-2. 在窗口里**手动完成豆包登录**（扫码或账号密码都行）。
-3. 登录成功后，**回到终端按回车**。
-
-终端会打印：
-
-```text
-状态已保存到 ~/.darkdola/save.json
-```
-
-登录态只保存这一次，后续启动自动复用。如果以后失效（豆包强制重新登录），删掉 `~/.darkdola/save.json` 再跑一次 `python main.py` 即可。
-
+playwright codegen https://www.doubao.com/ --save-storage="save.json"
 ---
 
 ## 第 3 步：配置 MCP 工具（可选）
