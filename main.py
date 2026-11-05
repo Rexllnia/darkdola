@@ -42,7 +42,7 @@ async def page_init(playwright: Playwright):
         context = await browser.new_context(storage_state=str(SAVE_FILE))
         print("找到 save.json")
     else:
-        print(f"未找到 {SAVE_FILE}，第一次请先手动登录并保存状态：")
+        print(f"未找到 {SAVE_FILE}，第一次请先手动运行命令登录并保存状态：")
         print(f"    playwright codegen {TARGET_URL} --save-storage={SAVE_FILE}")
         print("登录完成后关闭浏览器窗口，状态会自动保存。")
         raise SystemExit(1)  # 或者 return 让上层处理
