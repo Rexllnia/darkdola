@@ -42,9 +42,10 @@ async def page_init(playwright: Playwright):
         context = await browser.new_context(storage_state=str(SAVE_FILE))
         print("找到 save.json")
     else:
-        print("未找到 save.json，进入登录流程...")
-        context = await browser.new_context()
-    # 首次启动：等用户登录后保存状态
+        print(f"未找到 {SAVE_FILE}，第一次请先手动登录并保存状态：")
+        print(f"    playwright codegen {TARGET_URL} --save-storage={SAVE_FILE}")
+        print("登录完成后关闭浏览器窗口，状态会自动保存。")
+        raise SystemExit(1)  # 或者 return 让上层处理
 
     await context.add_init_script(
         path=os.path.join(
@@ -59,12 +60,6 @@ async def page_init(playwright: Playwright):
 
     await page.goto(TARGET_URL)
 
-    
-    if not SAVE_FILE.exists():
-        print(f"未找到 {SAVE_FILE}，第一次启动请先手动登录并保存状态：")
-        print(f"    playwright codegen {TARGET_URL} --save-storage={SAVE_FILE}")
-        print("登录完成后关闭浏览器窗口，状态会自动保存。")
-        raise SystemExit(1)  # 或者 return 让上层处理
     return page , browser , context
 
 
